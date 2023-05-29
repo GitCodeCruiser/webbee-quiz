@@ -8,10 +8,12 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Log;
 
 class EventsController extends BaseController
 {
-    public function getWarmupEvents() {
+    public function getWarmupEvents() 
+    {
         return Event::all();
     }
 
@@ -100,8 +102,17 @@ class EventsController extends BaseController
     ]
      */
 
-    public function getEventsWithWorkshops() {
-        throw new \Exception('implement in coding task 1');
+    public function getEventsWithWorkshops() 
+    {
+        try {
+            $events = Event::with('workshops')->get();
+
+            return $events;
+        } catch (\Exception $e) {
+            Log::error('An error occurred while fetching events with workshops: ' . $e->getMessage());
+    
+            return response()->json(['error' => 'Something went wrong. Please try again later.'], 500);
+        }
     }
 
 
@@ -178,7 +189,24 @@ class EventsController extends BaseController
     ```
      */
 
-    public function getFutureEventsWithWorkshops() {
-        throw new \Exception('implement in coding task 2');
+    public function getFutureEventsWithWorkshops() 
+    {
+        try{
+            $futureEvents = Event::has('workshops', '>', 0)
+            ->whereHas('workshops', function ($query) {
+                $query->where('start', '>', now());
+            })
+            ->with(['workshops' => function ($query) {
+                $query->orderBy('start');
+            }])
+            ->get();
+
+            return $futureEvents;
+
+        } catch (\Exception $e) {
+            Log::error('An error occurred while fetching events with workshops: ' . $e->getMessage());
+
+            return response()->json(['error' => 'Something went wrong. Please try again later.'], 500);
+        }
     }
 }

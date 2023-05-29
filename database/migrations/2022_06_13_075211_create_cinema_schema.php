@@ -36,7 +36,55 @@ class CreateCinemaSchema extends Migration
      */
     public function up()
     {
-        throw new \Exception('implement in coding task 4, you can ignore this exception if you are just running the initial migrations.');
+        Schema::create('films', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->integer('duration');
+            $table->timestamps();
+        });
+
+        Schema::create('shows', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('film_id')->constrained('films');
+            $table->decimal('basic_price', 8, 2);
+            $table->dateTime('start_time');
+            $table->dateTime('end_time');
+            $table->boolean('is_booked_out')->default(false);
+            $table->foreignId('showroom_id')->constrained('showrooms');
+            $table->timestamps();
+        });
+
+        Schema::create('showrooms', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->integer('basic_seat_count')->default(0);
+            $table->timestamps();
+        });
+
+        Schema::create('seat_types', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->integer('premium_percentage');
+            $table->timestamps();
+        });
+
+        Schema::create('seats', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('showroom_id')->constrained('showrooms');
+            $table->foreignId('seat_type_id')->constrained('seat_types');
+            $table->string('seat_number');
+            $table->string('row_name');
+            $table->timestamps();
+        });
+
+        Schema::create('bookings', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('show_id')->constrained('shows');
+            $table->foreignId('seat_id')->constrained('seats');
+            $table->string('user_id')->constrained('users');
+            $table->timestamps();
+        });
+
     }
 
     /**
@@ -46,5 +94,13 @@ class CreateCinemaSchema extends Migration
      */
     public function down()
     {
+        Schema::dropIfExists('bookings');
+        Schema::dropIfExists('seats');
+        Schema::dropIfExists('seat_types');
+        Schema::dropIfExists('showroom_shows');
+        Schema::dropIfExists('showrooms');
+        Schema::dropIfExists('shows');
+        Schema::dropIfExists('films');
+        Schema::dropIfExists('cinemas');
     }
 }

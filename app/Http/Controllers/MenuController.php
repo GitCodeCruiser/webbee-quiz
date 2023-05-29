@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MenuItem;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\Log;
 
 class MenuController extends BaseController
 {
@@ -92,7 +93,48 @@ class MenuController extends BaseController
     ]
      */
 
-    public function getMenuItems() {
-        throw new \Exception('implement in coding task 3');
+    public function getMenuItems()
+    {
+        try{
+            $menuItems = MenuItem::with('childrenRecursive')
+                ->whereNull('parent_id')
+                ->orderBy('id')
+                ->get()
+                ->toArray();
+
+            // Transform MenuItems to get testcased passed
+            return $this->transformMenuItems($menuItems);
+
+        } catch (\Exception $e) {
+            Log::error('An error occurred while fetching events with workshops: ' . $e->getMessage());
+
+            return response()->json(['error' => 'Something went wrong. Please try again later.'], 500);
+        }
+    }
+
+    private function transformMenuItems($menuItems)
+    {
+        try{
+            return array_map(function ($menuItem) {
+                $children = $menuItem['children_recursive'];
+                unset($menuItem['children_recursive']);
+
+                // Check if the menu item has children
+                if (!empty($children)) {
+                    // Recursively transform the children menu items
+                    $menuItem['children'] = $this->transformMenuItems($children);
+                } else {
+                    // If no children, set an empty array for consistency
+                    $menuItem['children'] = [];
+                }
+
+                return $menuItem;
+            }, $menuItems);
+
+        } catch (\Exception $e) {
+            Log::error('An error occurred while fetching events with workshops: ' . $e->getMessage());
+
+            return response()->json(['error' => 'Something went wrong. Please try again later.'], 500);
+        }
     }
 }
